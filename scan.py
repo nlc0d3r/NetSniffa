@@ -2,6 +2,7 @@
 import json
 import nmap
 import re
+import os
 import csv
 import socket
 from datetime import datetime
@@ -171,10 +172,36 @@ def CSVScan():
         # Calculate script execution time
         print( f"{Color( '[+] Scan is Done after '+ str( datetime.now() - startTime ), 'cyan' ) }" )
 
-        with open("scans/"+ SubnetName +"_"+ str( datetime.now() ) +".csv", "w", newline="") as f:
-            w = csv.DictWriter(f, results.keys())
+        # Create scans dir if not exist
+        path = os.path.abspath(os.getcwd()) +"/scans"
+        isExist = os.path.exists(path)
+        if not isExist:
+            os.makedirs( path )
+
+        now = datetime.now()
+
+        # Save data to CSV
+        with open( path +"/"+ str( now.strftime("%Y-%m-%d_%H:%M") ) +"_"+ SubnetName +".csv", "w", newline="") as f:
+            fieldnames = ['ip', 'mac', 'hostname', 'vendor', 'os', 'ports']
+            w = csv.DictWriter( f, fieldnames=fieldnames )
             w.writeheader()
-            w.writerow(results)
+
+            for device in results:
+                if device['ports']:
+                    fld_ports = ''
+                    for port in device['ports']:
+                        fld_ports += f"{ str( port['port'] ) } { str( port['name'] ) } { str( port['state'] ) } { str( port['product'] ) }\n"
+                else:
+                    fld_ports = ''
+
+                w.writerow({
+                    'ip': device['ip'],
+                    'mac': device['mac'],
+                    'hostname': device['hostname'],
+                    'vendor': device['vendor'],
+                    'os': device['os'],
+                    'ports': fld_ports.rstrip( '\n' ),
+                })
 
         results.clear()
 
