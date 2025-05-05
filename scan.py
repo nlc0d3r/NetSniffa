@@ -5,9 +5,9 @@ import re
 import os
 import csv
 import socket
+import asyncio
 from datetime import datetime
 from scapy.all import ARP, Ether, srp
-from multiprocessing import Pool, cpu_count
 
 AppName     = "NetSniffa"
 AppVersion  = "0.01apha1"
@@ -52,8 +52,9 @@ def GetIP():
         return { "IP": IP, "NET": NET }
 
 # Gets an advanced info about host
-def GetHostInfo( ip ):
+def GetHostInfo( index, Host ):
     nm = nmap.PortScanner()
+    ip = Host['ip']
 
     data = {
         'hostname': 'Unknown',
@@ -98,7 +99,14 @@ def GetHostInfo( ip ):
     except Exception as e:
         print(f"[!] Exception during Nmap scan of {ip}: {e}")
 
-    return data
+    results[index]['hostname'] = data['hostname']
+    results[index]['vendor']   = GetMACVendors( Host['mac'] )
+    results[index]['os']       = data['os']
+    results[index]['ports']    = data['ports']
+    # PrintData( results[index] )
+
+async def AsyncGetHostInfo( index, Host ):
+    return await asyncio.to_thread( GetHostInfo, index, Host )
 
 # Get ARP records
 def GetARP( subnet ):
@@ -111,15 +119,6 @@ def GetARP( subnet ):
         results.append( data )
     # Sort by the last octet
     results.sort( key=lambda x: int( x['ip'].split( '.' )[-1] ) )
-
-def EnrichResults():
-     for index, Host in enumerate( results ):
-        info = GetHostInfo( Host['ip'] )
-        results[index]['hostname'] = info['hostname']
-        results[index]['vendor']   = GetMACVendors( Host['mac'] )
-        results[index]['os']       = info['os']
-        results[index]['ports']    = info['ports']
-        PrintData( results[index] )
 
 # Nicely print the results
 def PrintData( device ):
@@ -167,7 +166,18 @@ def CSVScan():
         print( f"{Color( '[+] ARPScan is Done after '+ str( datetime.now() - startTime ), 'cyan' ) }" )
         print( f"{Color( '~' * 100, 'cyan' ) }" )
 
-        EnrichResults()
+        # Run GetHostInfo concurrently
+        async def run_all():
+            tasks = [AsyncGetHostInfo(index, Host) for index, Host in enumerate(results)]
+            await asyncio.gather(*tasks)
+
+            # Sort global results list by IP after tasks are done
+            results.sort(key=lambda x: socket.inet_aton(x["ip"]))
+
+            for device in results:
+                PrintData(device)
+
+        asyncio.run(run_all())
 
         # Calculate script execution time
         print( f"{Color( '[+] Scan is Done after '+ str( datetime.now() - startTime ), 'cyan' ) }" )
@@ -192,7 +202,7 @@ def CSVScan():
                     for port in device['ports']:
                         fld_ports += f"{ str( port['port'] ) } { str( port['name'] ) } { str( port['state'] ) } { str( port['product'] ) }\n"
                 else:
-                    fld_ports = ''
+                    fld_ports = 'None'
 
                 w.writerow({
                     'ip': device['ip'],
@@ -220,11 +230,8 @@ def Header():
     print( f"{Color( AppRepo, 'cyan' ) }" )
     print( f"{Color( '=' * 100, 'cyan' ) }" )
 
-if __name__ == '__main__':
+def main():    
     try:
-        # Debug fixate script start time
-        startTime = datetime.now()
-
         # print header
         Header()
 
@@ -233,3 +240,9 @@ if __name__ == '__main__':
    
     except KeyboardInterrupt:
         print( f"{Color( '[!] Script interrupted by user @ '+ str( datetime.now() ), 'red' ) }" )
+
+if __name__ == '__main__':
+
+    # Debug fixate script start time
+    startTime = datetime.now()
+    main()
