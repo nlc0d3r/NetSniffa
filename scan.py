@@ -71,10 +71,9 @@ def GetHostInfo( index, Host ):
     try:
         # -sS -sU -p T:1-65535 --top-ports U:1000
         # -sS -sU -p T:1-65535 --top-ports U:1000 -O -T4 -Pn
-
         # -sS -p T:1-65535 -O
         # -sS -sU -p T:1-65535 U:1-1000 -O
-        scan_result = nm.scan( ip, arguments='-sS -O -T4 -Pn' )
+        scan_result = nm.scan( ip, arguments='-sS -O -T4' )
         if 'scan' in scan_result and ip in scan_result['scan']:
             host_info = scan_result['scan'][ip]
 
@@ -97,7 +96,7 @@ def GetHostInfo( index, Host ):
         else:
             print(f"[!] No Nmap scan result for {ip}")    
     except Exception as e:
-        print(f"[!] Exception during Nmap scan of {ip}: {e}")
+        print(f"[!] Exception during Nmap scan of {ip}")
 
     results[index]['hostname'] = data['hostname']
     results[index]['vendor']   = GetMACVendors( Host['mac'] )
@@ -122,15 +121,15 @@ def GetARP( subnet ):
 
 # Nicely print the results
 def PrintData( device ):
-    print(f"IP:        {device['ip']}")
-    print(f"Hostname:  {device['hostname']}")
-    print(f"MAC:       {device['mac']}")
-    print(f"Vendor:    {device['vendor']}")
-    print(f"OS Guess:  {device['os']}")
-    print(f"[+] Open Ports: ", end='')
+    print(f"[+] IP:          { Color( device['ip'], 'cyan' ) }")
+    print(f" ├── Hostname:   {device['hostname']}")
+    print(f" ├── MAC:        {device['mac']}")
+    print(f" ├── Vendor:     {device['vendor']}")
+    print(f" ├── OS:         {device['os']}")
+    print(f" └── [+] Ports: ", end='')
     if device['ports']:
         for port in device['ports']:
-            print(f"\n |-- {port['port']}/{port['name']}", end='')
+            print(f"\n      ├── {port['port']}\t/ {port['name']}", end='')
             # Also available: port['state'] port['product']
     else:
         print( 'None', end='')
@@ -154,16 +153,20 @@ def CSVScan():
         SubnetName = item['name']
         SubnetRange = item['subnet']
 
-        print( f"{Color( '[+] Scanning: '+ SubnetName +' with IP range: '+ SubnetRange +' @ '+ str(datetime.now()), 'cyan' ) }" )
+        print( f"{Color( '[+] Scanning:', 'cyan' ) }" )
+        print( f"{Color( ' ├── Name:        '+ SubnetName, 'cyan' ) }" )
+        print( f"{Color( ' └── Subnet:      '+ SubnetRange, 'cyan' ) }" )
+        print( f"{Color( '[+] Scan Start:   '+ str(datetime.now()), 'cyan' ) }" )
 
         # 1st step scan ARP
+        print( f"{Color( '[+] ARP Scan:', 'cyan' ) }" )
         GetARP( SubnetRange )
         if len( results ) > 0:
-            print( f"{Color( '[+] ARPScan has found: '+ str( len( results ) ) +' Hosts.', 'cyan' ) }" )
+            print( f"{Color( ' ├── Hosts:       '+ str( len( results ) ), 'cyan' ) }" )
         else:
-            print( f"{Color( '[+] There is no host found', 'cyan' ) }" )
+            print( f"{Color( ' ├── Hosts Found: None', 'cyan' ) }" )
 
-        print( f"{Color( '[+] ARPScan is Done after '+ str( datetime.now() - startTime ), 'cyan' ) }" )
+        print( f"{Color( ' └── Done:        '+ str( datetime.now() - startTime ), 'cyan' ) }" )
         print( f"{Color( '~' * 100, 'cyan' ) }" )
 
         # Run GetHostInfo concurrently
