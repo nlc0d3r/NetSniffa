@@ -22,21 +22,21 @@ Go to directory where is located scan.py
 cd /path/to/directory
 ```
 
-Install required libraries needed for this scanner
+Install required libraries
 ```bash
 sudo pip install -r /path/to/requirements.txt
 ```
 
 ## Preperation for scan 
 
-After all is set up you need to create file `subnets.csv` where you will include the desired subnets you want to scan.
+After all is set up you need to create file `subnets.csv` where you will include the desired subnets you want to scan
 
 Create file `subnets.csv`
 ```bash
 sudo nano subnets.csv
 ```
 
-Add the desired subnets you want to scan.
+Add the desired subnets you want to scan
 ```
 <SUBNET_NAME>,<SUBNET_IP>
 ```
@@ -47,11 +47,11 @@ Office Network,192.168.0.1/24
 Warehouse Network,192.168.0.1/24
 ```
 
-Save and close the file.
+Save and close the file
 
 ## Usage
 
-To run scanner use command below.
+To run scanner use command below
 ```bash
 sudo python3 scan.py
 ```
