@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/nlc0d3r/NetSniffa/blob/main/NetSniffa.png" height="100"></p>
+<p align="center"><img src="https://github.com/nlc0d3r/NetSniffa/blob/main/NetSniffa.png" height="200"></p>
 
 # NetSniffa
 
