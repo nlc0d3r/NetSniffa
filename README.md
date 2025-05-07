@@ -1,3 +1,5 @@
+<p align="center"><img src="https://github.com/nlc0d3r/NetSniffa/blob/main/NetSniffa.png" height="100"></p>
+
 # NetSniffa
 
 ## Installation
