@@ -3,6 +3,7 @@ import json
 import nmap
 import re
 import os
+import sys
 import csv
 import socket
 import asyncio
@@ -10,7 +11,7 @@ from datetime import datetime
 from scapy.all import ARP, Ether, srp
 
 AppName     = "NetSniffa"
-AppVersion  = "0.01apha1"
+AppVersion  = "0.0.1alpha1"
 AppAuthor   = "nlc0d3r"
 AppRepo     = "https://github.com/nlc0d3r/NetSniffa"
 
@@ -105,7 +106,11 @@ def GetHostInfo( index, Host ):
     # PrintData( results[index] )
 
 async def AsyncGetHostInfo( index, Host ):
-    return await asyncio.to_thread( GetHostInfo, index, Host )
+    if PyVersion() < 9:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor( None, GetHostInfo, index, Host )
+    elif PyVersion() >= 9:
+        return await asyncio.to_thread( GetHostInfo, index, Host )
 
 # Get ARP records
 def GetARP( subnet ):
@@ -129,7 +134,7 @@ def PrintData( device ):
     print(f" └── [+] Ports: ", end='')
     if device['ports']:
         for port in device['ports']:
-            print(f"\n      ├── {port['port']}\t/ {port['name']}", end='')
+            print(f"\n      ├── {port['port']} / {port['name']}", end='')
             # Also available: port['state'] port['product']
     else:
         print( 'None', end='')
@@ -218,6 +223,12 @@ def CSVScan():
 
         results.clear()
 
+# Gets Python version
+def PyVersion():
+    FullVersion     = sys.version.split( ' ' )
+    SplitVersion    = FullVersion[0].split( '.' )
+    return int( SplitVersion[1] )
+
 # Make header
 def Header():
     Banner = r"""
@@ -233,7 +244,7 @@ def Header():
     print( f"{Color( AppRepo, 'cyan' ) }" )
     print( f"{Color( '=' * 100, 'cyan' ) }" )
 
-def main():    
+def main():   
     try:
         # print header
         Header()
